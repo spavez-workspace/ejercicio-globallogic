@@ -68,8 +68,7 @@ public class JwtUtil {
         }
         return null;
     }
-        
-    // Validate JWT token
+            
     public boolean validateJwtToken(String token) {
     	try {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
