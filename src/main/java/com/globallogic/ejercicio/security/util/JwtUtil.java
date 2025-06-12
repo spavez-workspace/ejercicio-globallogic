@@ -74,11 +74,9 @@ public class JwtUtil {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
             return true;
         } catch (ExpiredJwtException e) {
-        	return false;
+        	throw new CustomJwtException("Token JWT expirado", HttpStatus.UNAUTHORIZED);
         } catch (MalformedJwtException e) {
             throw new CustomJwtException("Token JWT mal formado", HttpStatus.BAD_REQUEST);
-        } catch (SecurityException e) {
-            throw new CustomJwtException("Token JWT expirado", HttpStatus.UNAUTHORIZED);
         } catch (UnsupportedJwtException e) {
             throw new CustomJwtException("Token JWT no soportado", HttpStatus.BAD_REQUEST);
         } catch (IllegalArgumentException e) {

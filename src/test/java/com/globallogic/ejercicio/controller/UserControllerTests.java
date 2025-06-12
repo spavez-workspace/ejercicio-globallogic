@@ -190,18 +190,18 @@ class UserControllerTests {
     }
     
     @Test
-    void login_shouldReturnError_whenTokenIsMalformed() throws Exception {
+    void login_shouldReturnError_whenExpiredJwtException() throws Exception {
 
         when(jwtUtil.resolveToken(any(HttpServletRequest.class))).thenReturn("invalid-token");
         when(userService.login("invalid-token"))
-            .thenThrow(new CustomJwtException("Token JWT mal formado", HttpStatus.BAD_REQUEST));
+            .thenThrow(new CustomJwtException("Token JWT expirado", HttpStatus.UNAUTHORIZED));
 
         mockMvc.perform(post("/login")
                 .header("Authorization", "Bearer invalid-token"))
-            .andExpect(status().isBadRequest())
+            .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$.error.timestamp").exists())
-            .andExpect(jsonPath("$.error.codigo").value(400))
-            .andExpect(jsonPath("$.error.detail").value("Token JWT mal formado"));
+            .andExpect(jsonPath("$.error.codigo").value(401))
+            .andExpect(jsonPath("$.error.detail").value("Token JWT expirado"));
     }
     
     @Test
