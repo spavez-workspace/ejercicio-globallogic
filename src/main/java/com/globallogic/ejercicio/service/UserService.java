@@ -11,7 +11,8 @@ import com.globallogic.ejercicio.model.UserExample;
 public interface UserService {
 	
 	SignUpResponseDto saveUser(SignUpRequestDto signUpDto);
-	LoginResponseDto login(LoginRequestDto request, String token);
+	LoginResponseDto loginByRequestBody(LoginRequestDto request, String token);
+	LoginResponseDto login(String token);
 	UserDetails loadUserByUsername(String username);
 
 }

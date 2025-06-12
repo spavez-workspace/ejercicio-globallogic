@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -21,6 +22,7 @@ import com.globallogic.ejercicio.exception.UserAlreadyExistsException;
 import com.globallogic.ejercicio.exception.UserNotFoundException;
 import com.globallogic.ejercicio.model.UserExample;
 import com.globallogic.ejercicio.repository.UserRepository;
+import com.globallogic.ejercicio.security.util.AESUtil;
 import com.globallogic.ejercicio.security.util.JwtUtil;
 import com.globallogic.ejercicio.model.*;
 
@@ -36,12 +38,17 @@ public class UserServiceImpl implements UserService, UserDetailsService{
 	@Autowired
     PasswordEncoder encoder;
 	
+	@Value("${aes.secret}")
+	private String aesSecretKey;
+	
 	private UserExample dtoToEntity(SignUpRequestDto signUpDto) {
 		
 		UserExample user = new UserExample();
 		
 		user.setName(signUpDto.getName());
-		user.setPassword(encoder.encode(signUpDto.getPassword()));
+		//Password se debe poder desencriptar en el Login por lo que se encriptara usando AES en vez de Hash
+		//user.setPassword(encoder.encode(signUpDto.getPassword()));
+		user.setPassword(AESUtil.encrypt(signUpDto.getPassword(), aesSecretKey));
 		user.setEmail(signUpDto.getEmail());
 				
 		List<Phone> phones = signUpDto.getPhones().stream()
@@ -59,16 +66,23 @@ public class UserServiceImpl implements UserService, UserDetailsService{
 		
 	}
 	
+	/*
+	 * Fix: Se modifica la validacion de usuario para que se haga contra el email.
+	 * El token sera generado con el correo puesto que el nombre de usuario puede repetirse
+	 * */
 	@Override
 	public SignUpResponseDto saveUser(SignUpRequestDto signUpDto) {		
 		
-		if(userRepository.existsByName(signUpDto.getName())) {
-			throw new UserAlreadyExistsException("Usuario ya existe");
-		}
+		//Valida si ya existe un usuario registrado con el mismo correo
+		if(userRepository.existsByEmail(signUpDto.getEmail())) {
+			throw new UserAlreadyExistsException("Ya existe un usuario registrado con ese correo.");
+		}		
 		
+		//Almacena el usuario
 		UserExample user = userRepository.save(dtoToEntity(signUpDto));		
 		
-		String token = jwtUtil.generateToken(user.getUsername());
+		//Genera token JWT (Token no debe quedar en BD)
+		String token = jwtUtil.generateToken(user.getEmail());
 		user.setActive(true);
 		
 		SignUpResponseDto response = userToSignUpResponse(user);
@@ -80,29 +94,66 @@ public class UserServiceImpl implements UserService, UserDetailsService{
 	/*
 	 * Valida las credenciales, luego valida que el usuario coincida con el usuario del token
 	 * si las condiciones se cumplen completa el login
+	 * 
+	 * Fix: se valida usuario con el correo puesto que el nombre de usuario se puede repetir
 	 * */
 	@Override
-	public LoginResponseDto login(LoginRequestDto request, String token) {		
+	public LoginResponseDto loginByRequestBody(LoginRequestDto request, String token) {		
 		
-		UserExample user = userRepository.findByName(request.getUser()).orElseThrow(() -> new UserNotFoundException("No existe usuario"));
+		//Se valida que exista el usuario utilizando el correo recibido en el body
+		UserExample user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> new UserNotFoundException("El correo ingresado no esta registrado"));
 		
-		if (!encoder.matches(request.getPassword(), user.getPassword())) {
-	        throw new BadCredentialsException("Contraseña incorrecta");
-	    }
+		//Obtiene el correo desencriptando el token
+		String email = jwtUtil.getEmailFromToken(token);
 		
-		jwtUtil.validateJwtToken(token);
-		
-		String userName = jwtUtil.getUserNameFromToken(token);
-		
-		if (!userName.equals(request.getUser())) {
+		//Valida que el correo ingresado por body coincida con el recibido en el token
+		if (!email.equals(request.getEmail())) {
 			throw new BadCredentialsException("El token proporcionado no coincide con el usuario");
 		}
-				
-		String newToken = jwtUtil.generateToken(userName);
+		
+		//Identifica al usuario con email y password, se modifica para desencriptar con AES
+		//if (!encoder.matches(request.getPassword(), user.getPassword())) {
+	    //    throw new BadCredentialsException("Contraseña incorrecta");
+	    //}
+		if(!AESUtil.decrypt(user.getPassword(), aesSecretKey).equals(request.getPassword())) {
+			throw new BadCredentialsException("Contraseña incorrecta");
+	    }
+		
+		//Valida que el token sea real
+		jwtUtil.validateJwtToken(token);
+		
+		//Genera un nuevo token utilizando el email como claim
+		String newToken = jwtUtil.generateToken(email);
 		
 		LoginResponseDto response = userToLoginResponse(user);
 		response.setToken(newToken);
 		response.setPassword(request.getPassword());
+		
+		user.setLastLogin(LocalDateTime.now());
+		userRepository.save(user);
+		
+		return response;
+	}
+	
+	@Override
+	public LoginResponseDto login(String token){
+
+		//Valida que el token sea real
+		jwtUtil.validateJwtToken(token);
+		
+		//Obtiene el correo desencriptando el token
+		String email = jwtUtil.getEmailFromToken(token);
+		
+		//Se valida que exista el usuario utilizando el correo encriptado en el token
+		UserExample user = userRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("No existe el usuario correspondiente al token"));
+						
+		//Genera un nuevo token utilizando el email como claim
+		String newToken = jwtUtil.generateToken(email);
+		
+		LoginResponseDto response = userToLoginResponse(user);
+		response.setToken(newToken);
+		//Desencripta la pass con AES
+		response.setPassword(AESUtil.decrypt(user.getPassword(), aesSecretKey));
 		
 		user.setLastLogin(LocalDateTime.now());
 		userRepository.save(user);
@@ -147,10 +198,13 @@ public class UserServiceImpl implements UserService, UserDetailsService{
 		return response;
 	}
 	
+	/*
+	 * Fix: se debe modificar para que loadUserByUsername considere el email como username
+	 * */
 	@Override
-	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-		return userRepository.findByName(username)
-	            .orElseThrow(() -> new UsernameNotFoundException("No existe usuario con nombre: " + username));
+	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+		return userRepository.findByEmail(email)
+	            .orElseThrow(() -> new UsernameNotFoundException("No existe usuario con email: " + email));
 	}
 	
 }

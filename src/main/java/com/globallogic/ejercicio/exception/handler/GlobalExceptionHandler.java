@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -15,6 +18,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import com.globallogic.ejercicio.dto.ErrorDto;
 import com.globallogic.ejercicio.dto.ErrorResponseDto;
 import com.globallogic.ejercicio.exception.*;
+
+import io.jsonwebtoken.security.InvalidKeyException;
 
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -43,17 +48,17 @@ public class GlobalExceptionHandler {
 	
 	@ExceptionHandler(UserAlreadyExistsException.class)
 	public ResponseEntity<ErrorResponseDto> handleUserDuplicateEntry(UserAlreadyExistsException ex){
-		return buildErrorResponse("El usuario ya existe.", HttpStatus.CONFLICT);
+		return buildErrorResponse(ex.getMessage(), HttpStatus.CONFLICT);
 	}
 	
 	@ExceptionHandler(BadCredentialsException.class)
 	public ResponseEntity<ErrorResponseDto> handleBadCredentials(BadCredentialsException ex){
-		return buildErrorResponse("Contraseña incorrecta.", HttpStatus.UNAUTHORIZED);
+		return buildErrorResponse(ex.getMessage(), HttpStatus.UNAUTHORIZED);
 	}
 	
 	@ExceptionHandler(UserNotFoundException.class)
 	public ResponseEntity<ErrorResponseDto> handleUserNotFound(UserNotFoundException ex){
-		return buildErrorResponse("El usuario no existe.", HttpStatus.NOT_FOUND);
+		return buildErrorResponse(ex.getMessage(), HttpStatus.NOT_FOUND);
 	}
 	
 	@ExceptionHandler(CustomJwtException.class)
@@ -74,5 +79,20 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(HttpMessageNotReadableException.class)
 	public ResponseEntity<ErrorResponseDto> handleInvalidJson(HttpMessageNotReadableException ex) {
 		return buildErrorResponse("Error en el formato del JSON: " + ex.getMostSpecificCause().getMessage(), HttpStatus.BAD_REQUEST);
+	}
+	
+	@ExceptionHandler(EncryptionException.class)
+	public ResponseEntity<ErrorResponseDto> handleEncryptionException(EncryptionException ex) {
+	    Throwable cause = ex.getCause();
+
+	    if (cause instanceof InvalidKeyException) {
+	        return buildErrorResponse("Clave AES inválida", HttpStatus.BAD_REQUEST);
+	    } else if (cause instanceof BadPaddingException) {
+	        return buildErrorResponse("Padding incorrecto. La clave o el texto están mal", HttpStatus.BAD_REQUEST);
+	    } else if (cause instanceof IllegalBlockSizeException) {
+	        return buildErrorResponse("Bloque ilegítimo. El texto no se puede procesar", HttpStatus.BAD_REQUEST);
+	    }
+
+	    return buildErrorResponse("Error de encriptación desconocido: " + cause.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 }

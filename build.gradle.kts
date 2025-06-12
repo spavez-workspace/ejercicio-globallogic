@@ -2,6 +2,7 @@ plugins {
 	java
 	id("org.springframework.boot") version "2.5.14"
     id("io.spring.dependency-management") version "1.1.4"
+    jacoco
 }
 
 group = "com.globallogic"
@@ -45,8 +46,37 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-ui:1.7.0")
     implementation("org.springdoc:springdoc-openapi-data-rest:1.7.0")    
     implementation("io.swagger.core.v3:swagger-annotations:2.2.15")
+    testImplementation("org.mockito:mockito-inline:4.11.0")
 }
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+}
+
+jacoco {
+    toolVersion = "0.8.10"
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+
+    reports {
+        xml.required.set(false)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+    
+    classDirectories.setFrom(
+        files(classDirectories.files.map {
+            fileTree(it) {
+                exclude("com/globallogic/ejercicio/dto/**")
+                exclude("com/globallogic/ejercicio/model/**")
+                exclude("com/globallogic/ejercicio/security/**")
+                exclude("com/globallogic/ejercicio/exception/**")
+                exclude("com/globallogic/ejercicio/configuration/**")
+                exclude("com/globallogic/ejercicio/util/**")
+                exclude("com/globallogic/ejercicio/EjercicioApplication.class")
+            }
+        })
+    )
 }

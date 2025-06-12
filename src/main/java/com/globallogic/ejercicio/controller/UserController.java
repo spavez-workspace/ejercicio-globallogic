@@ -48,9 +48,12 @@ public class UserController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(response);
 	}
 	
+	/*
+	 * Fix: se modifica para que se valide usuario por email y password
+	 * */
 	@Operation(
-	        summary = "Endpoint de login de usuario",
-	        description = "Dado un usuario y password y algun token del usuario generado previamente loguea al usuario otorgandole un nuevo token, se debe pasar JWT como header de autorizacion",
+	        summary = "Endpoint de login de usuario un email y password",
+	        description = "Dado un email y password y algun token del usuario generado previamente loguea al usuario otorgandole un nuevo token, se debe pasar JWT como header de autorizacion",
 	        security = @SecurityRequirement(name = "bearerAuth")
 	    )	
 	@ApiResponses(value = {
@@ -58,12 +61,34 @@ public class UserController {
 	        @ApiResponse(responseCode = "401", description = "Contraseña incorrecta", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponseDto.class))),
 	        @ApiResponse(responseCode = "404", description = "Usuario no encontrado", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponseDto.class)))	        
 	    })
-	@PostMapping(value = "/login", consumes = "application/json", produces = "application/json")
-	public ResponseEntity<LoginResponseDto> login(@RequestBody @Valid LoginRequestDto login, HttpServletRequest request){
+	@PostMapping(value = "/loginByRequestBody", consumes = "application/json", produces = "application/json")
+	public ResponseEntity<LoginResponseDto> loginByRequestBody(@RequestBody @Valid LoginRequestDto login, HttpServletRequest request){
 			
 		String token = jwtUtil.resolveToken(request);
 		
-		LoginResponseDto response = userService.login(login, token);
+		LoginResponseDto response = userService.loginByRequestBody(login, token);
+				
+		return ResponseEntity.ok(response);
+	}
+	
+	/*
+	 * Endpoint para hacer login solo con token
+	 * */
+	@Operation(
+	        summary = "Endpoint de login de usuario por token",
+	        description = "Dado un token del usuario generado previamente loguea al usuario otorgandole un nuevo token, se debe pasar JWT como header de autorizacion",
+	        security = @SecurityRequirement(name = "bearerAuth")
+	    )	
+	@ApiResponses(value = {
+	        @ApiResponse(responseCode = "200", description = "Login correcto", content = @Content(mediaType = "application/json", schema = @Schema(implementation = LoginResponseDto.class))),
+	        @ApiResponse(responseCode = "404", description = "Usuario no encontrado", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponseDto.class)))	        
+	    })
+	@PostMapping(value = "/login")
+	public ResponseEntity<LoginResponseDto> login(HttpServletRequest request){
+			
+		String token = jwtUtil.resolveToken(request);
+		
+		LoginResponseDto response = userService.login(token);
 				
 		return ResponseEntity.ok(response);
 	}

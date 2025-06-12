@@ -36,15 +36,15 @@ public class JwtFilter extends OncePerRequestFilter {
         try {
         	
         	String path = request.getRequestURI();
-        	if (path.equals("/sign-up") || path.equals("/login") || path.startsWith("/h2-console") || path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs")) {
+        	if (path.equals("/sign-up") || path.equals("/login") || path.equals("/loginByRequestBody") || path.startsWith("/h2-console") || path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs")) {
         	    filterChain.doFilter(request, response);
         	    return;
         	}
         	
             String jwt = jwtUtil.resolveToken(request);
             if (jwt != null && jwtUtil.validateJwtToken(jwt)) {            	
-                String username = jwtUtil.getUserNameFromToken(jwt);
-                UserDetails userDetails = userService.loadUserByUsername(username);
+                String email = jwtUtil.getEmailFromToken(jwt);
+                UserDetails userDetails = userService.loadUserByUsername(email);
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(

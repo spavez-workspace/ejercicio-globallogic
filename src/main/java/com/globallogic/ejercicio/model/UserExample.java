@@ -38,9 +38,9 @@ public class UserExample implements UserDetails {
 	@Column(columnDefinition = "BINARY(16)")
 	private UUID id;
 	
-	@Column(unique = true)
 	private String name;
 	private String password;
+	@Column(unique = true)
 	private String email;
 	private LocalDateTime created;
 	private LocalDateTime lastLogin;
@@ -63,7 +63,7 @@ public class UserExample implements UserDetails {
 
 	@Override
 	public String getUsername() {
-		return name;
+		return email;
 	}
 
 	@Override

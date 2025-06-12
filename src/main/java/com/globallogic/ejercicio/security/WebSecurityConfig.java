@@ -50,6 +50,7 @@ public class WebSecurityConfig {
                         authorizeRequests
 	                        .requestMatchers(new AntPathRequestMatcher("/sign-up")).permitAll()
 	                        .requestMatchers(new AntPathRequestMatcher("/login")).permitAll()
+	                        .requestMatchers(new AntPathRequestMatcher("/loginByRequestBody")).permitAll()
 	                        .requestMatchers(new AntPathRequestMatcher("/h2-console/**")).permitAll()
 	                        .requestMatchers(new AntPathRequestMatcher("/swagger-ui.html")).permitAll()
 	                        .requestMatchers(new AntPathRequestMatcher("/swagger-ui/**")).permitAll()

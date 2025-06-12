@@ -39,16 +39,16 @@ public class JwtUtil {
         this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 	
-    public String generateToken(String userName) {
+    public String generateToken(String email) {
         return Jwts.builder()
-            .setSubject(userName)
+            .setSubject(email)
             .setIssuedAt(new Date(System.currentTimeMillis()))
             .setExpiration(new Date(System.currentTimeMillis() + 1000 * expirationSec))
             .signWith(key, SignatureAlgorithm.HS256)
             .compact();
     }
 
-    public String getUserNameFromToken(String token) {
+    public String getEmailFromToken(String token) {
         try {
             return Jwts.parserBuilder()
                        .setSigningKey(key)
