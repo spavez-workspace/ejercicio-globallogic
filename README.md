@@ -51,7 +51,8 @@ El endpoint de login requiere un JWT válido, puede estar expirado pero debe per
 
 ## 🔐 Endpoints
 - POST /sign-up — Crea un usuario y genera un token JWT valido por 5 minutos.
-- POST /login — Genera un token JWT teniendo las credenciales y un token valido para el usuario.
+- POST /login — Genera un token JWT dado un token pasado por el Header Authorization
+- POST /loginByRequestBody — Genera un token JWT teniendo las credenciales y un token valido para el usuario.
 
 ## 📥 Ejemplos de uso
 **Request /sign-up:**
@@ -74,7 +75,7 @@ El endpoint de login requiere un JWT válido, puede estar expirado pero debe per
 http://localhost:8080/sign-up
 ```
 
-**Request /login utilizar Bearer Token Authorization:**
+**Request /loginByRequestBody utilizar Bearer Token Authorization:**
 
 ```json
 {
@@ -82,6 +83,12 @@ http://localhost:8080/sign-up
     "password": "a2asfGfdfdf4"
 }
 ```
+```bash
+http://localhost:8080/loginByRequestBody
+```
+
+**Request /login utilizar Bearer Token Authorization:**
+
 ```bash
 http://localhost:8080/login
 ```
@@ -95,6 +102,16 @@ gradlew test
 El reporte de errores se genera en
 ```bash
 /build/reports/tests/test/index.html
+```
+
+## 📊 Jacoco Report
+Reporte de covertura de pruebas, apuntado a Service y Controller
+```bash
+gradlew jacocoTestReport
+```
+El reporte de errores se genera en
+```bash
+/build/reports/jacoco/test/html/index.html
 ```
 
 ## 📄 Estructura del proyecto
