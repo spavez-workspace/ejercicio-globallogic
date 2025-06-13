@@ -14,7 +14,6 @@ import com.globallogic.ejercicio.exception.CustomJwtException;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
@@ -27,12 +26,12 @@ import javax.annotation.PostConstruct;
 public class JwtUtil {
 	
 	@Value("${jwt.secret}")
-	private String jwtSecret;
+	public String jwtSecret;
 	
 	@Value("${jwt.expiration}")
-	private int expirationSec;
+	public int expirationSec;
 	
-	private SecretKey key;
+	public SecretKey key;
 
     @PostConstruct
     public void init() {

@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
+@RequestMapping("/api/users")
 public class UserController {
 	
 	@Autowired
@@ -92,5 +93,10 @@ public class UserController {
 				
 		return ResponseEntity.ok(response);
 	}
+	
+	@GetMapping("/private")
+    public ResponseEntity<String> privateEndpoint() {
+        return ResponseEntity.ok("Autenticado");
+    }
 
 }

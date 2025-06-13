@@ -19,7 +19,6 @@ public class WebSecurityConfig {
     @Autowired
     private AuthEntryPointJwt unauthorizedHandler;
     
-    @Bean
     public JwtFilter authenticationJwtTokenFilter() {
         return new JwtFilter();
     }
@@ -48,13 +47,14 @@ public class WebSecurityConfig {
                 )
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
-	                        .requestMatchers(new AntPathRequestMatcher("/sign-up")).permitAll()
-	                        .requestMatchers(new AntPathRequestMatcher("/login")).permitAll()
-	                        .requestMatchers(new AntPathRequestMatcher("/loginByRequestBody")).permitAll()
+	                        .requestMatchers(new AntPathRequestMatcher("/api/users/sign-up")).permitAll()
+	                        .requestMatchers(new AntPathRequestMatcher("/api/users/login")).permitAll()
+	                        .requestMatchers(new AntPathRequestMatcher("/api/users/loginByRequestBody")).permitAll()
 	                        .requestMatchers(new AntPathRequestMatcher("/h2-console/**")).permitAll()
 	                        .requestMatchers(new AntPathRequestMatcher("/swagger-ui.html")).permitAll()
 	                        .requestMatchers(new AntPathRequestMatcher("/swagger-ui/**")).permitAll()
 	                        .requestMatchers(new AntPathRequestMatcher("/v3/api-docs/**")).permitAll()
+	                        .requestMatchers(new AntPathRequestMatcher("/api/private")).authenticated()
 	                        .anyRequest().authenticated()
                 );
 

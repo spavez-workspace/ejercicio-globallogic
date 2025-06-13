@@ -69,11 +69,7 @@ tasks.jacocoTestReport {
     classDirectories.setFrom(
         files(classDirectories.files.map {
             fileTree(it) {
-                exclude("com/globallogic/ejercicio/dto/**")
-                exclude("com/globallogic/ejercicio/model/**")
-                exclude("com/globallogic/ejercicio/security/**")
-                exclude("com/globallogic/ejercicio/exception/**")
-                exclude("com/globallogic/ejercicio/configuration/**")
+                exclude("com/globallogic/ejercicio/dto/**")                
                 exclude("com/globallogic/ejercicio/util/**")
                 exclude("com/globallogic/ejercicio/EjercicioApplication.class")
             }

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
+import com.globallogic.ejercicio.exception.EncryptionException;
 import com.globallogic.ejercicio.security.util.AESUtil;
 
 public class AESUtilTests {
@@ -14,7 +15,7 @@ public class AESUtilTests {
     private static final String SECRET_KEY = "1234567890123456";
     private static final String PLAINTEXT = "Este es un texto secreto";
 
-    //@Test
+    @Test
     public void testEncryptDecrypt() throws Exception {
 
         String encrypted = AESUtil.encrypt(PLAINTEXT, SECRET_KEY);
@@ -26,14 +27,14 @@ public class AESUtilTests {
         assertEquals(PLAINTEXT, decrypted, "El texto desencriptado debe ser igual al texto original");
     }
 
-    //@Test
+    @Test
     public void testEncryptWithNullText() {
-        assertThrows(NullPointerException.class, () -> {
+        assertThrows(EncryptionException.class, () -> {
             AESUtil.encrypt(null, SECRET_KEY);
         });
     }
 
-    //@Test
+    @Test
     public void testDecryptWithInvalidCiphertext() {
         assertThrows(Exception.class, () -> {
             AESUtil.decrypt("texto-invalido", SECRET_KEY);

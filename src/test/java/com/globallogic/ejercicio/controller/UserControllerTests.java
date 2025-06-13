@@ -2,11 +2,9 @@ package com.globallogic.ejercicio.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -18,28 +16,30 @@ import org.springframework.security.authentication.BadCredentialsException;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 import javax.servlet.http.HttpServletRequest;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-import com.globallogic.ejercicio.controller.UserController;
 import com.globallogic.ejercicio.dto.LoginRequestDto;
 import com.globallogic.ejercicio.dto.LoginResponseDto;
 import com.globallogic.ejercicio.dto.PhoneDto;
 import com.globallogic.ejercicio.dto.SignUpRequestDto;
 import com.globallogic.ejercicio.dto.SignUpResponseDto;
 import com.globallogic.ejercicio.exception.CustomJwtException;
+import com.globallogic.ejercicio.exception.EncryptionException;
 import com.globallogic.ejercicio.exception.UserAlreadyExistsException;
 import com.globallogic.ejercicio.exception.UserNotFoundException;
 import com.globallogic.ejercicio.security.JwtFilter;
-import com.globallogic.ejercicio.security.util.AESUtil;
 import com.globallogic.ejercicio.security.util.JwtUtil;
 import com.globallogic.ejercicio.service.UserService;
+
+import io.jsonwebtoken.security.InvalidKeyException;
 
 @WebMvcTest(UserController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -81,7 +81,7 @@ class UserControllerTests {
 
         when(userService.saveUser(any(SignUpRequestDto.class))).thenReturn(responseDto);
 
-        mockMvc.perform(post("/sign-up")
+        mockMvc.perform(post("/api/users/sign-up")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonRequest))
             .andExpect(status().isCreated())
@@ -99,7 +99,7 @@ class UserControllerTests {
         when(userService.login("fake-jwt-token"))
             .thenThrow(new UserAlreadyExistsException("Ya existe un usuario registrado con ese correo."));
 
-        mockMvc.perform(post("/login")
+        mockMvc.perform(post("/api/users/login")
                 .header("Authorization", "Bearer fake-jwt-token"))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.error.timestamp").exists())
@@ -134,7 +134,7 @@ class UserControllerTests {
         when(userService.loginByRequestBody(any(LoginRequestDto.class), anyString()))
             .thenReturn(responseDto);
         
-        mockMvc.perform(post("/loginByRequestBody")
+        mockMvc.perform(post("/api/users/loginByRequestBody")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonRequest))
             .andExpect(status().isOk())
@@ -149,6 +149,78 @@ class UserControllerTests {
             .andExpect(jsonPath("$.active").value(true))
             .andExpect(jsonPath("$.created").exists())
             .andExpect(jsonPath("$.lastLogin").exists());   
+    }
+    
+    @Test
+    void loginByRequestBody_shouldReturnHttpMediaTypeNotSupportedException() throws Exception {
+    	String jsonRequest = "{"
+    	        + "\"email\": \"ignacio.pavez.p@gmail.com\","
+    	        + "\"password\": \"a2asfGfdfdf4\""
+    	        + "}";
+    	
+        LoginResponseDto responseDto = new LoginResponseDto();
+        responseDto.setId("userid");
+        responseDto.setCreated(LocalDateTime.now().toString());
+        responseDto.setLastLogin(LocalDateTime.now().toString());
+        responseDto.setToken("fake-jwt-token");
+        responseDto.setName("Sebastian");
+        responseDto.setEmail("ignacio.pavez.p@gmail.com");
+        responseDto.setPassword("a2asfGfdfdf4");
+        responseDto.setActive(true);
+
+        PhoneDto phone = new PhoneDto();
+        phone.setNumber(967890794L);
+        phone.setCitycode(2);
+        phone.setContrycode("56");
+        responseDto.setPhones(List.of(phone));
+    		
+        when(jwtUtil.resolveToken(any(HttpServletRequest.class))).thenReturn("fake-jwt-token");
+        when(userService.loginByRequestBody(any(LoginRequestDto.class), anyString()))
+            .thenReturn(responseDto);
+        
+        mockMvc.perform(post("/api/users/loginByRequestBody")
+                .contentType(MediaType.TEXT_PLAIN)
+                .content(jsonRequest))
+            .andExpect(status().isUnsupportedMediaType())
+            .andExpect(jsonPath("$.error.timestamp").exists())
+            .andExpect(jsonPath("$.error.codigo").value(415))
+            .andExpect(jsonPath("$.error.detail").exists());
+    }
+    
+    @Test
+    void loginByRequestBody_shouldReturnHttpMessageNotReadableException() throws Exception {
+    	String jsonRequest = "{"
+    	        + "\"email\": ignacio.pavez.p@gmail.com\","
+    	        + "\"password\": \"a2asfGfdfdf4\""
+    	        + "}";
+    	
+        LoginResponseDto responseDto = new LoginResponseDto();
+        responseDto.setId("userid");
+        responseDto.setCreated(LocalDateTime.now().toString());
+        responseDto.setLastLogin(LocalDateTime.now().toString());
+        responseDto.setToken("fake-jwt-token");
+        responseDto.setName("Sebastian");
+        responseDto.setEmail("ignacio.pavez.p@gmail.com");
+        responseDto.setPassword("a2asfGfdfdf4");
+        responseDto.setActive(true);
+
+        PhoneDto phone = new PhoneDto();
+        phone.setNumber(967890794L);
+        phone.setCitycode(2);
+        phone.setContrycode("56");
+        responseDto.setPhones(List.of(phone));
+    		
+        when(jwtUtil.resolveToken(any(HttpServletRequest.class))).thenReturn("fake-jwt-token");
+        when(userService.loginByRequestBody(any(LoginRequestDto.class), anyString()))
+            .thenReturn(responseDto);
+        
+        mockMvc.perform(post("/api/users/loginByRequestBody")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonRequest))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.error.timestamp").exists())
+            .andExpect(jsonPath("$.error.codigo").value(400))
+            .andExpect(jsonPath("$.error.detail").exists());
     }
     
     @Test
@@ -173,7 +245,7 @@ class UserControllerTests {
         when(jwtUtil.resolveToken(any(HttpServletRequest.class))).thenReturn("fake-jwt-token");
         when(userService.login("fake-jwt-token")).thenReturn(responseDto);
         
-        mockMvc.perform(post("/login")
+        mockMvc.perform(post("/api/users/login")
                 .header("Authorization", "Bearer fake-jwt-token"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value("userid"))
@@ -196,12 +268,84 @@ class UserControllerTests {
         when(userService.login("invalid-token"))
             .thenThrow(new CustomJwtException("Token JWT expirado", HttpStatus.UNAUTHORIZED));
 
-        mockMvc.perform(post("/login")
+        mockMvc.perform(post("/api/users/login")
                 .header("Authorization", "Bearer invalid-token"))
             .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$.error.timestamp").exists())
             .andExpect(jsonPath("$.error.codigo").value(401))
             .andExpect(jsonPath("$.error.detail").value("Token JWT expirado"));
+    }
+    
+    @Test
+    void login_shouldReturnError_whenInvalidKeyException() throws Exception {
+
+    	InvalidKeyException cause = new InvalidKeyException("Clave inválida");
+        EncryptionException encryptionException = new EncryptionException("Error en AES", cause);
+    	
+        when(jwtUtil.resolveToken(any(HttpServletRequest.class))).thenReturn("invalid-token");
+        when(userService.login("invalid-token"))
+            .thenThrow(encryptionException);
+
+        mockMvc.perform(post("/api/users/login")
+                .header("Authorization", "Bearer invalid-token"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.error.timestamp").exists())
+            .andExpect(jsonPath("$.error.codigo").value(400))
+            .andExpect(jsonPath("$.error.detail").exists());
+    }
+    
+    @Test
+    void login_shouldReturnError_whenBadPaddingException() throws Exception {
+
+    	BadPaddingException cause = new BadPaddingException("Clave inválida");
+        EncryptionException encryptionException = new EncryptionException("Error en AES", cause);
+    	
+        when(jwtUtil.resolveToken(any(HttpServletRequest.class))).thenReturn("invalid-token");
+        when(userService.login("invalid-token"))
+            .thenThrow(encryptionException);
+
+        mockMvc.perform(post("/api/users/login")
+                .header("Authorization", "Bearer invalid-token"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.error.timestamp").exists())
+            .andExpect(jsonPath("$.error.codigo").value(400))
+            .andExpect(jsonPath("$.error.detail").exists());
+    }
+    
+    @Test
+    void login_shouldReturnError_whenIllegalBlockSizeException() throws Exception {
+
+    	IllegalBlockSizeException cause = new IllegalBlockSizeException("Clave inválida");
+        EncryptionException encryptionException = new EncryptionException("Error en AES", cause);
+    	
+        when(jwtUtil.resolveToken(any(HttpServletRequest.class))).thenReturn("invalid-token");
+        when(userService.login("invalid-token"))
+            .thenThrow(encryptionException);
+
+        mockMvc.perform(post("/api/users/login")
+                .header("Authorization", "Bearer invalid-token"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.error.timestamp").exists())
+            .andExpect(jsonPath("$.error.codigo").value(400))
+            .andExpect(jsonPath("$.error.detail").exists());
+    }
+    
+    @Test
+    void login_shouldReturnError_whenUnknownCause() throws Exception {
+
+    	Throwable unknownCause = new RuntimeException("Causa desconocida");
+        EncryptionException encryptionException = new EncryptionException("Error en AES", unknownCause);
+    	
+        when(jwtUtil.resolveToken(any(HttpServletRequest.class))).thenReturn("invalid-token");
+        when(userService.login("invalid-token"))
+            .thenThrow(encryptionException);
+
+        mockMvc.perform(post("/api/users/login")
+                .header("Authorization", "Bearer invalid-token"))
+            .andExpect(status().isInternalServerError())
+            .andExpect(jsonPath("$.error.timestamp").exists())
+            .andExpect(jsonPath("$.error.codigo").value(500))
+            .andExpect(jsonPath("$.error.detail").exists());
     }
     
     @Test
@@ -211,12 +355,27 @@ class UserControllerTests {
         when(userService.login("fake-jwt-token"))
             .thenThrow(new UserNotFoundException("No existe el usuario correspondiente al token"));
 
-        mockMvc.perform(post("/login")
+        mockMvc.perform(post("/api/users/login")
                 .header("Authorization", "Bearer fake-jwt-token"))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.error.timestamp").exists())
             .andExpect(jsonPath("$.error.codigo").value(404))
             .andExpect(jsonPath("$.error.detail").value("No existe el usuario correspondiente al token"));
+    }
+    
+    @Test
+    void login_shouldReturnError_internalServerError() throws Exception {
+
+        when(jwtUtil.resolveToken(any(HttpServletRequest.class))).thenReturn("fake-jwt-token");
+        when(userService.login("fake-jwt-token"))
+            .thenThrow(new RuntimeException("No existe el usuario correspondiente al token"));
+
+        mockMvc.perform(post("/api/users/login")
+                .header("Authorization", "Bearer fake-jwt-token"))
+            .andExpect(status().isInternalServerError())
+            .andExpect(jsonPath("$.error.timestamp").exists())
+            .andExpect(jsonPath("$.error.codigo").value(500))
+            .andExpect(jsonPath("$.error.detail").exists());
     }
     
     @Test
@@ -226,7 +385,7 @@ class UserControllerTests {
         when(userService.login("fake-jwt-token"))
             .thenThrow(new UserNotFoundException("El correo ingresado no esta registrado"));
 
-        mockMvc.perform(post("/login")
+        mockMvc.perform(post("/api/users/login")
                 .header("Authorization", "Bearer fake-jwt-token"))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.error.timestamp").exists())
@@ -241,7 +400,7 @@ class UserControllerTests {
         when(userService.login("fake-jwt-token"))
             .thenThrow(new BadCredentialsException("Contraseña incorrecta"));
 
-        mockMvc.perform(post("/login")
+        mockMvc.perform(post("/api/users/login")
                 .header("Authorization", "Bearer fake-jwt-token"))
             .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$.error.timestamp").exists())
@@ -256,7 +415,7 @@ class UserControllerTests {
         when(userService.login("fake-jwt-token"))
             .thenThrow(new BadCredentialsException("El token proporcionado no coincide con el usuario"));
 
-        mockMvc.perform(post("/login")
+        mockMvc.perform(post("/api/users/login")
                 .header("Authorization", "Bearer fake-jwt-token"))
             .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$.error.timestamp").exists())
