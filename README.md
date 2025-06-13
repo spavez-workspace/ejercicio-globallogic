@@ -79,7 +79,7 @@ http://localhost:8080/api/users/sign-up
 
 ```json
 {
-    "email": "spavez",
+    "email": "ignacio.pavez.p@gmail.com",
     "password": "a2asfGfdfdf4"
 }
 ```
