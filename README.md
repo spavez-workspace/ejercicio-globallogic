@@ -50,12 +50,12 @@ El endpoint de login requiere un JWT válido, puede estar expirado pero debe per
 - Ej: Authorization: Bearer eyJhbGciOiJIUzI1Ni....
 
 ## 🔐 Endpoints
-- POST /sign-up — Crea un usuario y genera un token JWT valido por 5 minutos.
-- POST /login — Genera un token JWT dado un token pasado por el Header Authorization
-- POST /loginByRequestBody — Genera un token JWT teniendo las credenciales y un token valido para el usuario.
+- POST /api/users/sign-up — Crea un usuario y genera un token JWT valido por 5 minutos.
+- POST /api/users/login — Genera un token JWT dado un token pasado por el Header Authorization
+- POST /api/users/loginByRequestBody — Genera un token JWT teniendo las credenciales y un token valido para el usuario.
 
 ## 📥 Ejemplos de uso
-**Request /sign-up:**
+**Request api/users/sign-up:**
 
 ```json
 {
@@ -72,25 +72,25 @@ El endpoint de login requiere un JWT válido, puede estar expirado pero debe per
 }
 ```
 ```bash
-http://localhost:8080/sign-up
+http://localhost:8080/api/users/sign-up
 ```
 
-**Request /loginByRequestBody utilizar Bearer Token Authorization:**
+**Request api/users/loginByRequestBody utilizar Bearer Token Authorization:**
 
 ```json
 {
-    "user": "spavez",
+    "email": "spavez",
     "password": "a2asfGfdfdf4"
 }
 ```
 ```bash
-http://localhost:8080/loginByRequestBody
+http://localhost:8080/api/users/loginByRequestBody
 ```
 
-**Request /login utilizar Bearer Token Authorization:**
+**Request api/users/login utilizar Bearer Token Authorization:**
 
 ```bash
-http://localhost:8080/login
+http://localhost:8080/api/users/login
 ```
 
 ## 🧪 Tests
