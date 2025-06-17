@@ -46,8 +46,6 @@ public class UserServiceImpl implements UserService, UserDetailsService{
 		UserExample user = new UserExample();
 		
 		user.setName(signUpDto.getName());
-		//Password se debe poder desencriptar en el Login por lo que se encriptara usando AES en vez de Hash
-		//user.setPassword(encoder.encode(signUpDto.getPassword()));
 		user.setPassword(AESUtil.encrypt(signUpDto.getPassword(), aesSecretKey));
 		user.setEmail(signUpDto.getEmail());
 				
@@ -66,10 +64,6 @@ public class UserServiceImpl implements UserService, UserDetailsService{
 		
 	}
 	
-	/*
-	 * Fix: Se modifica la validacion de usuario para que se haga contra el email.
-	 * El token sera generado con el correo puesto que el nombre de usuario puede repetirse
-	 * */
 	@Override
 	public SignUpResponseDto saveUser(SignUpRequestDto signUpDto) {		
 		
@@ -94,8 +88,6 @@ public class UserServiceImpl implements UserService, UserDetailsService{
 	/*
 	 * Valida las credenciales, luego valida que el usuario coincida con el usuario del token
 	 * si las condiciones se cumplen completa el login
-	 * 
-	 * Fix: se valida usuario con el correo puesto que el nombre de usuario se puede repetir
 	 * */
 	@Override
 	public LoginResponseDto loginByRequestBody(LoginRequestDto request, String token) {		
@@ -111,10 +103,7 @@ public class UserServiceImpl implements UserService, UserDetailsService{
 			throw new BadCredentialsException("El token proporcionado no coincide con el usuario");
 		}
 		
-		//Identifica al usuario con email y password, se modifica para desencriptar con AES
-		//if (!encoder.matches(request.getPassword(), user.getPassword())) {
-	    //    throw new BadCredentialsException("Contraseña incorrecta");
-	    //}
+		//Identifica al usuario con email y password, se desencripta con AES
 		if(!AESUtil.decrypt(user.getPassword(), aesSecretKey).equals(request.getPassword())) {
 			throw new BadCredentialsException("Contraseña incorrecta");
 	    }
@@ -152,6 +141,7 @@ public class UserServiceImpl implements UserService, UserDetailsService{
 		
 		LoginResponseDto response = userToLoginResponse(user);
 		response.setToken(newToken);
+		
 		//Desencripta la pass con AES
 		response.setPassword(AESUtil.decrypt(user.getPassword(), aesSecretKey));
 		
@@ -197,10 +187,7 @@ public class UserServiceImpl implements UserService, UserDetailsService{
 		
 		return response;
 	}
-	
-	/*
-	 * Fix: se debe modificar para que loadUserByUsername considere el email como username
-	 * */
+		
 	@Override
 	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 		return userRepository.findByEmail(email)

@@ -49,9 +49,6 @@ public class UserController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(response);
 	}
 	
-	/*
-	 * Fix: se modifica para que se valide usuario por email y password
-	 * */
 	@Operation(
 	        summary = "Endpoint de login de usuario un email y password",
 	        description = "Dado un email y password y algun token del usuario generado previamente loguea al usuario otorgandole un nuevo token, se debe pasar JWT como header de autorizacion",
@@ -72,9 +69,6 @@ public class UserController {
 		return ResponseEntity.ok(response);
 	}
 	
-	/*
-	 * Endpoint para hacer login solo con token
-	 * */
 	@Operation(
 	        summary = "Endpoint de login de usuario por token",
 	        description = "Dado un token del usuario generado previamente loguea al usuario otorgandole un nuevo token, se debe pasar JWT como header de autorizacion",
