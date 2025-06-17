@@ -6,7 +6,6 @@ import com.globallogic.ejercicio.dto.LoginRequestDto;
 import com.globallogic.ejercicio.dto.LoginResponseDto;
 import com.globallogic.ejercicio.dto.SignUpRequestDto;
 import com.globallogic.ejercicio.dto.SignUpResponseDto;
-import com.globallogic.ejercicio.model.UserExample;
 
 public interface UserService {
 	
